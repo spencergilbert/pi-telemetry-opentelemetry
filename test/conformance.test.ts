@@ -6,13 +6,14 @@ import type {
 } from "@earendil-works/pi-telemetry";
 import { createTelemetryAdapterConformance, type TelemetryAdapterFixture } from "@earendil-works/pi-telemetry/testing";
 import { type Attributes, type SpanContext, SpanStatusCode } from "@opentelemetry/api";
+import { MeterProvider } from "@opentelemetry/sdk-metrics";
 import { InMemorySpanExporter, type ReadableSpan, SimpleSpanProcessor, TracerProvider } from "@opentelemetry/sdk-trace";
 import { describe, expect, it } from "vitest";
 import { createOpenTelemetryTelemetry } from "../src/index.ts";
 
-// Phase 3 (metrics) enables the remaining group.
-const PHASE_2_GROUPS = new Set([
+const ALL_GROUPS = new Set([
 	"capabilities",
+	"metrics",
 	"links",
 	"callback lifecycle",
 	"status",
@@ -88,26 +89,34 @@ function normalizeSpans(spans: readonly ReadableSpan[]): readonly RecordedTeleme
 
 async function createFixture(): Promise<TelemetryAdapterFixture> {
 	const exporter = new InMemorySpanExporter();
-	const provider = new TracerProvider({ spanProcessors: [new SimpleSpanProcessor({ exporter })] });
-	const context = createOpenTelemetryTelemetry({ tracerProvider: provider });
+	const tracerProvider = new TracerProvider({ spanProcessors: [new SimpleSpanProcessor({ exporter })] });
+	const meterProvider = new MeterProvider();
+	const context = createOpenTelemetryTelemetry({
+		tracerProvider,
+		meterProvider,
+		enableMeasurementJournal: true,
+	});
 	return {
 		context,
 		propagation: context.propagation,
+		metrics: context.metrics,
+		getMetrics: async () => context.getMetrics(),
 		getSpans: async () => {
-			await provider.forceFlush();
+			await tracerProvider.forceFlush();
 			return normalizeSpans(exporter.getFinishedSpans());
 		},
 		async [Symbol.asyncDispose]() {
-			await provider.shutdown();
+			await tracerProvider.shutdown();
+			await meterProvider.shutdown();
 		},
 	};
 }
 
 const conformance = createTelemetryAdapterConformance(createFixture);
 
-describe("OpenTelemetry adapter conformance (Phase 2: propagation)", () => {
+describe("OpenTelemetry adapter conformance", () => {
 	for (const group of new Set(conformance.map((testCase) => testCase.group))) {
-		if (!PHASE_2_GROUPS.has(group)) continue;
+		if (!ALL_GROUPS.has(group)) continue;
 		describe(group, () => {
 			for (const testCase of conformance.filter((candidate) => candidate.group === group)) {
 				it(testCase.name, () => testCase.run());
@@ -115,8 +124,8 @@ describe("OpenTelemetry adapter conformance (Phase 2: propagation)", () => {
 		});
 	}
 
-	it("covers every Phase 2 group", () => {
+	it("covers every conformance group", () => {
 		const groups = new Set(conformance.map((testCase) => testCase.group));
-		for (const group of PHASE_2_GROUPS) expect(groups.has(group)).toBe(true);
+		for (const group of ALL_GROUPS) expect(groups.has(group)).toBe(true);
 	});
 });

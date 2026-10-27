@@ -1,4 +1,10 @@
 import type { TelemetryCarrier } from "@earendil-works/pi-telemetry";
+import {
+	AggregationTemporality,
+	InMemoryMetricExporter,
+	MeterProvider,
+	PeriodicExportingMetricReader,
+} from "@opentelemetry/sdk-metrics";
 import { InMemorySpanExporter, SimpleSpanProcessor, TracerProvider } from "@opentelemetry/sdk-trace";
 import { describe, expect, it } from "vitest";
 import { createOpenTelemetryTelemetry } from "../src/index.ts";
@@ -22,11 +28,45 @@ describe("adapter entry point", () => {
 		await expect(shutdown()).resolves.toBeUndefined();
 	});
 
-	it("fails fast on unimplemented Phase 3 metrics", () => {
+	it("retains no measurements unless the journal is enabled", () => {
 		const telemetry = createOpenTelemetryTelemetry();
-		expect(() => telemetry.metrics.counter("counter")).toThrow(/Phase 3/);
-		expect(() => telemetry.metrics.upDownCounter("up-down")).toThrow(/Phase 3/);
-		expect(() => telemetry.metrics.histogram("histogram")).toThrow(/Phase 3/);
+		telemetry.metrics.counter("requests").add(3);
+		telemetry.metrics.histogram("latency").record(7);
+		expect(telemetry.getMetrics()).toEqual([]);
+	});
+
+	it("records measurements through OTel instruments", async () => {
+		const metricExporter = new InMemoryMetricExporter(AggregationTemporality.CUMULATIVE);
+		const meterProvider = new MeterProvider({
+			readers: [new PeriodicExportingMetricReader({ exporter: metricExporter, exportIntervalMillis: 60_000 })],
+		});
+		const tracerProvider = new TracerProvider({
+			spanProcessors: [new SimpleSpanProcessor({ exporter: new InMemorySpanExporter() })],
+		});
+		const telemetry = createOpenTelemetryTelemetry({
+			tracerProvider,
+			meterProvider,
+			enableMeasurementJournal: true,
+		});
+		telemetry.metrics.counter("requests").add(3, { route: "home" });
+		telemetry.metrics.upDownCounter("inflight").add(1);
+		await telemetry.startSpan({ name: "measured" }, (span) => {
+			telemetry.metrics.histogram("latency", { unit: "ms" }).record(7, { route: "home" }, span);
+		});
+		await meterProvider.forceFlush();
+		// The SDK aggregates, so the exporter proves forwarding while the
+		// adapter snapshot preserves recording order.
+		expect(metricExporter.getMetrics().length).toBeGreaterThan(0);
+		const snapshot = telemetry.getMetrics();
+		expect(snapshot.map((measurement) => [measurement.kind, measurement.name, measurement.value])).toEqual([
+			["counter", "requests", 3],
+			["upDownCounter", "inflight", 1],
+			["histogram", "latency", 7],
+		]);
+		expect(snapshot[2]?.context).toMatchObject({ traceparent: expect.any(String) });
+		await telemetry.shutdown();
+		await meterProvider.shutdown();
+		await tracerProvider.shutdown();
 	});
 
 	it("roundtrips W3C trace context through inject/extract", async () => {
