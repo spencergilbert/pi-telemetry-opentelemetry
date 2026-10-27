@@ -42,6 +42,24 @@ const meterProvider = new MeterProvider({
 const telemetry = createOpenTelemetryTelemetry({ tracerProvider, meterProvider });
 ```
 
+Batteries-included OTLP/HTTP setup from the environment:
+
+```typescript
+import { createNodeOtlpTelemetry } from '@brainrot.xyz/pi-telemetry-opentelemetry';
+
+// Honors OTEL_EXPORTER_OTLP_ENDPOINT (plus signal-specific endpoints and
+// headers), OTEL_SERVICE_NAME, and OTEL_RESOURCE_ATTRIBUTES. Shut down the
+// returned providers after telemetry.shutdown() for a clean exit.
+const { telemetry, tracerProvider, meterProvider } = createNodeOtlpTelemetry();
+```
+
+`createNodeOtlpTelemetry()` accepts explicit `serviceName`,
+`resourceAttributes`, `traceEndpoint`, `metricsEndpoint`, `headers`, and
+`enableMeasurementJournal` overrides; anything left unset falls back to
+the exporters' standard `OTEL_EXPORTER_OTLP_*` handling. Use
+`resolveNodeOtlpResourceAttributes()` to reuse the same service-name and
+resource-attribute resolution when building custom providers.
+
 `telemetry.getMetrics()` returns an ordered snapshot of the measurements
 recorded through the adapter's instruments (recording order, no
 aggregation) for tests. Pass `enableMeasurementJournal: true` to retain
@@ -56,8 +74,11 @@ aggregates per its views and readers.
 | `@earendil-works/pi-telemetry` | 1.4.0 | Adapter contract + conformance suite source |
 | `@opentelemetry/api` | 1.10.0 | Shared by the whole OTel set |
 | `@opentelemetry/core` | 3.0.0 | W3C trace-context propagator |
-| `@opentelemetry/sdk-trace` | 3.0.0 | Span recording, dev-only (3.x line; `sdk-trace-base@2.x` peers `api<1.10` and conflicts with `sdk-metrics@3.x`) |
-| `@opentelemetry/sdk-metrics` | 3.0.0 | Test MeterProvider + exporters (fixture/smoke); the adapter itself only needs `@opentelemetry/api` meter types |
+| `@opentelemetry/sdk-trace` | 3.0.0 | Span recording (3.x line; `sdk-trace-base@2.x` peers `api<1.10` and conflicts with `sdk-metrics@3.x`) + OTLP helper providers |
+| `@opentelemetry/sdk-metrics` | 3.0.0 | Instrument recording + OTLP helper providers |
+| `@opentelemetry/exporter-trace-otlp-http` | 0.300.0 | OTLP helper span export (pins the 3.0.0 SDK line) |
+| `@opentelemetry/exporter-metrics-otlp-http` | 0.300.0 | OTLP helper metric export (pins the 3.0.0 SDK line) |
+| `@opentelemetry/resources` | 3.0.0 | OTLP helper service-name / resource attributes |
 | Node.js | >=22.19.0 | Matches pi-telemetry |
 
 ## Non-goals

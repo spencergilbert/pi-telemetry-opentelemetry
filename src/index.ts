@@ -365,3 +365,11 @@ export function createOpenTelemetryTelemetry(options: OpenTelemetryTelemetryOpti
 		getMetrics,
 	};
 }
+
+export {
+	createNodeOtlpTelemetry,
+	type NodeOtlpResourceOptions,
+	type NodeOtlpTelemetry,
+	type NodeOtlpTelemetryOptions,
+	resolveNodeOtlpResourceAttributes,
+} from "./node-otlp.ts";
