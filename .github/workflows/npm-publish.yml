@@ -34,10 +34,10 @@ jobs:
         with:
           node-version: 24
           registry-url: 'https://registry.npmjs.org'
-          # Releases must not restore a cached dependency tree: staged artifacts
-          # are built from `npm ci` against the committed lockfile, and caching
-          # would let a stale or poisoned entry into an approved release.
-          cache: false
+          # No `cache` input on purpose: releases must not restore a cached
+          # dependency tree. Staged artifacts are built from `npm ci` against
+          # the committed lockfile, and caching would let a stale or poisoned
+          # entry into an approved release.
 
       - name: Verify tag matches package.json version
         run: |
