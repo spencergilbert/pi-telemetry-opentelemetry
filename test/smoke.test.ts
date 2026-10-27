@@ -1,3 +1,5 @@
+import type { TelemetryCarrier } from "@earendil-works/pi-telemetry";
+import { InMemorySpanExporter, SimpleSpanProcessor, TracerProvider } from "@opentelemetry/sdk-trace";
 import { describe, expect, it } from "vitest";
 import { createOpenTelemetryTelemetry } from "../src/index.ts";
 
@@ -27,12 +29,31 @@ describe("adapter entry point", () => {
 		expect(() => telemetry.metrics.histogram("histogram")).toThrow(/Phase 3/);
 	});
 
-	it("treats propagation as a no-op until Phase 2", async () => {
-		const telemetry = createOpenTelemetryTelemetry();
-		await telemetry.startSpan({ name: "carrier-source" }, (span) => {
-			expect(telemetry.propagation.inject(span)).toBeUndefined();
+	it("roundtrips W3C trace context through inject/extract", async () => {
+		const provider = new TracerProvider({
+			spanProcessors: [new SimpleSpanProcessor({ exporter: new InMemorySpanExporter() })],
 		});
-		const root = telemetry.propagation.extract(undefined);
-		await expect(root.startSpan({ name: "extracted-root" }, () => "ok")).resolves.toBe("ok");
+		const telemetry = createOpenTelemetryTelemetry({ tracerProvider: provider });
+		await telemetry.startSpan({ name: "carrier-source" }, async (span) => {
+			const carrier = telemetry.propagation.inject(span);
+			expect(carrier?.traceparent).toMatch(/^00-[0-9a-f]{32}-[0-9a-f]{16}-0[01]$/);
+			const wire = JSON.parse(JSON.stringify(carrier));
+			const extracted = telemetry.propagation.extract(wire);
+			expect(extracted.propagation).toBe(telemetry.propagation);
+			expect(extracted.metrics).toBe(telemetry.metrics);
+			await expect(extracted.startSpan({ name: "extracted-child" }, () => "ok")).resolves.toBe("ok");
+		});
+		await telemetry.shutdown();
+	});
+
+	it("falls back to root for absent and unknown carriers", async () => {
+		const telemetry = createOpenTelemetryTelemetry();
+		expect(telemetry.propagation.inject(telemetry)).toBeUndefined();
+		const carriers: readonly (TelemetryCarrier | undefined)[] = [undefined, {}, { unknown: "format" }];
+		for (const carrier of carriers) {
+			const context = telemetry.propagation.extract(carrier);
+			await expect(context.startSpan({ name: "fallback" }, () => 42)).resolves.toBe(42);
+		}
+		await telemetry.shutdown();
 	});
 });

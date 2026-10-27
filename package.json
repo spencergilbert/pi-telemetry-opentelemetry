@@ -37,7 +37,8 @@
 	},
 	"dependencies": {
 		"@earendil-works/pi-telemetry": "1.4.0",
-		"@opentelemetry/api": "1.10.0"
+		"@opentelemetry/api": "1.10.0",
+		"@opentelemetry/core": "3.0.0"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.6.3",

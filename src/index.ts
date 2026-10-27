@@ -11,6 +11,9 @@ import {
 	type TelemetryUpDownCounter,
 } from "@earendil-works/pi-telemetry";
 import {
+	defaultTextMapGetter,
+	defaultTextMapSetter,
+	isSpanContextValid,
 	type Context as OTelContext,
 	type Link as OTelLink,
 	type SpanStatus as OTelStatus,
@@ -20,7 +23,10 @@ import {
 	SpanStatusCode,
 	type TracerProvider,
 } from "@opentelemetry/api";
+import { W3CTraceContextPropagator } from "@opentelemetry/core";
 import { toOtelAttributes } from "./attributes.ts";
+
+const propagator = new W3CTraceContextPropagator();
 
 export interface OpenTelemetryTelemetryOptions {
 	/**
@@ -86,11 +92,23 @@ export function createOpenTelemetryTelemetry(options: OpenTelemetryTelemetryOpti
 		histogram: (): TelemetryHistogram => unsupported("histogram"),
 	};
 
-	// TODO(Phase 2): back inject/extract with the propagator. Until then the
-	// capability behaves like the no-op propagator with stable identity.
 	const propagation: TelemetryPropagation = {
-		inject: () => undefined,
-		extract: () => root,
+		inject: (context) => {
+			const otelContextValue = contexts.get(context);
+			if (otelContextValue === undefined) return undefined;
+			const spanContext = otelTrace.getSpanContext(otelContextValue);
+			if (spanContext === undefined || !isSpanContextValid(spanContext)) return undefined;
+			const carrier: Record<string, string> = {};
+			propagator.inject(otelContextValue, carrier, defaultTextMapSetter);
+			return Object.keys(carrier).length > 0 ? carrier : undefined;
+		},
+		extract: (carrier) => {
+			if (carrier === undefined || typeof carrier !== "object" || Array.isArray(carrier)) return root;
+			const extracted = propagator.extract(ROOT_CONTEXT, carrier, defaultTextMapGetter);
+			const spanContext = otelTrace.getSpanContext(extracted);
+			if (spanContext === undefined || !isSpanContextValid(spanContext)) return root;
+			return makeExtracted(extracted);
+		},
 	};
 	const root: TelemetryContext & { metrics: TelemetryMetrics; propagation: TelemetryPropagation } = {
 		metrics,
@@ -98,6 +116,17 @@ export function createOpenTelemetryTelemetry(options: OpenTelemetryTelemetryOpti
 		startSpan: (spanOptions, callback) =>
 			stopped ? startInert(spanOptions, callback) : startFromParent(undefined, spanOptions, callback),
 	};
+
+	function makeExtracted(otelParent: OTelContext): TelemetryContext {
+		const extracted: TelemetryContext = {
+			metrics,
+			propagation,
+			startSpan: (spanOptions, callback) =>
+				stopped ? startInert(spanOptions, callback) : startFromParent(otelParent, spanOptions, callback),
+		};
+		contexts.set(extracted, otelParent);
+		return extracted;
+	}
 
 	function startInert<T>(spanOptions: SpanOptions, callback: (span: TelemetrySpan) => T | Promise<T>): Promise<T> {
 		return NOOP_TELEMETRY_CONTEXT.startSpan(spanOptions, (noop) =>

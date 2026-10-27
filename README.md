@@ -4,9 +4,10 @@ OpenTelemetry adapter for [`@earendil-works/pi-telemetry`](https://www.npmjs.com
 Pi packages pass telemetry contexts explicitly; this adapter bridges that
 vendor-neutral contract to OpenTelemetry tracers, meters, and propagators.
 
-> Status: Phase 1 (tracing core). Span lifecycle, attributes, events, links,
-> and status are implemented and covered by the pi-telemetry conformance
-> suite; propagation (Phase 2) and metrics (Phase 3) are declared placeholders.
+> Status: Phase 2 (propagation). Span lifecycle, attributes, events, links,
+> status, and W3C trace-context propagation are implemented and covered by
+> the pi-telemetry conformance suite; metrics (Phase 3) remain a declared
+> placeholder.
 
 ## Installation
 
@@ -42,6 +43,7 @@ const telemetry = createOpenTelemetryTelemetry({ tracerProvider: provider });
 |---|---|---|
 | `@earendil-works/pi-telemetry` | 1.4.0 | Adapter contract + conformance suite source |
 | `@opentelemetry/api` | 1.10.0 | Shared by the whole OTel set |
+| `@opentelemetry/core` | 3.0.0 | W3C trace-context propagator |
 | `@opentelemetry/sdk-trace` | 3.0.0 | Span recording, dev-only (3.x line; `sdk-trace-base@2.x` peers `api<1.10` and conflicts with `sdk-metrics@3.x`) |
 | `@opentelemetry/sdk-metrics` | 3.0.0 | Instrument recording, dev-only (Phase 3 tests) |
 | Node.js | >=22.19.0 | Matches pi-telemetry |
