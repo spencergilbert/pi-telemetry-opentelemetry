@@ -1,0 +1,53 @@
+{
+	"name": "@brainrot.xyz/pi-telemetry-opentelemetry",
+	"version": "0.1.0",
+	"description": "OpenTelemetry adapter for pi-telemetry",
+	"keywords": [
+		"opentelemetry",
+		"pi-telemetry",
+		"telemetry",
+		"tracing",
+		"observability"
+	],
+	"author": "Spencer Gilbert",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/spencergilbert/pi-telemetry-opentelemetry.git"
+	},
+	"type": "module",
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
+	"files": [
+		"dist",
+		"README.md"
+	],
+	"scripts": {
+		"clean": "rm -rf dist",
+		"build": "tsc -p tsconfig.build.json",
+		"test": "vitest --run",
+		"check": "biome check src test && tsc --noEmit",
+		"prepublishOnly": "npm run clean && npm run build"
+	},
+	"dependencies": {
+		"@earendil-works/pi-telemetry": "1.4.0",
+		"@opentelemetry/api": "1.10.0"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "2.6.3",
+		"@opentelemetry/sdk-metrics": "3.0.0",
+		"@opentelemetry/sdk-trace": "3.0.0",
+		"@types/node": "22.19.19",
+		"typescript": "7.0.2",
+		"vitest": "4.1.11"
+	},
+	"engines": {
+		"node": ">=22.19.0"
+	}
+}
