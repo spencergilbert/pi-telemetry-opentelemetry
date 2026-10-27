@@ -4,10 +4,10 @@ OpenTelemetry adapter for [`@earendil-works/pi-telemetry`](https://www.npmjs.com
 Pi packages pass telemetry contexts explicitly; this adapter bridges that
 vendor-neutral contract to OpenTelemetry tracers, meters, and propagators.
 
-> Status: Phase 3 (metrics). Span lifecycle, attributes, events, links,
-> status, W3C trace-context propagation, and metrics (counters,
-> up-down counters, histograms) are implemented and covered by the
-> pi-telemetry conformance suite.
+> Status: complete. Span lifecycle, attributes, events, links, status,
+> W3C trace-context propagation, metrics (counters, up-down counters,
+> histograms), and the env-based OTLP helper are implemented and covered
+> by the pi-telemetry conformance suite.
 
 ## Installation
 
