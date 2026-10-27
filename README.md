@@ -8,6 +8,9 @@ vendor-neutral contract to OpenTelemetry tracers, meters, and propagators.
 > W3C trace-context propagation, metrics (counters, up-down counters,
 > histograms), and the env-based OTLP helper are implemented and covered
 > by the pi-telemetry conformance suite.
+>
+> AI disclosure: this package — implementation, tests, and docs — was
+> written with AI assistance and reviewed by the maintainer.
 
 ## Installation
 
