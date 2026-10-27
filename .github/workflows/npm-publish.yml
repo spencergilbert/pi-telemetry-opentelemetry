@@ -92,7 +92,7 @@ jobs:
             exit 0
           fi
 
-          if npm stage list "@brainrot.xyz/pi-telemetry-opentelemetry" --json | grep -q "$version"; then
+          if npm stage list "@brainrot.xyz/pi-telemetry-opentelemetry" --json 2>/dev/null | grep -q "$version"; then
             echo "Version $version is already staged; approve it with \`npm stage approve <stage-id>\`."
             exit 0
           fi
