@@ -74,14 +74,14 @@ aggregates per its views and readers.
 
 | Dependency | Version | Notes |
 |---|---|---|
-| `@earendil-works/pi-telemetry` | 1.4.0 | Adapter contract + conformance suite source |
+| `@earendil-works/pi-telemetry` | 1.5.0 | Adapter contract + conformance suite source |
 | `@opentelemetry/api` | 1.10.0 | Shared by the whole OTel set |
-| `@opentelemetry/core` | 3.0.0 | W3C trace-context propagator |
-| `@opentelemetry/sdk-trace` | 3.0.0 | Span recording (3.x line; `sdk-trace-base@2.x` peers `api<1.10` and conflicts with `sdk-metrics@3.x`) + OTLP helper providers |
-| `@opentelemetry/sdk-metrics` | 3.0.0 | Instrument recording + OTLP helper providers |
-| `@opentelemetry/exporter-trace-otlp-http` | 0.300.0 | OTLP helper span export (pins the 3.0.0 SDK line) |
-| `@opentelemetry/exporter-metrics-otlp-http` | 0.300.0 | OTLP helper metric export (pins the 3.0.0 SDK line) |
-| `@opentelemetry/resources` | 3.0.0 | OTLP helper service-name / resource attributes |
+| `@opentelemetry/core` | 3.1.0 | W3C trace-context propagator |
+| `@opentelemetry/sdk-trace` | 3.1.0 | Span recording (3.x line; `sdk-trace-base@2.x` peers `api<1.10` and conflicts with `sdk-metrics@3.x`) + OTLP helper providers |
+| `@opentelemetry/sdk-metrics` | 3.1.0 | Instrument recording + OTLP helper providers |
+| `@opentelemetry/exporter-trace-otlp-http` | 0.301.0 | OTLP helper span export (pins the 3.1.0 SDK line) |
+| `@opentelemetry/exporter-metrics-otlp-http` | 0.301.0 | OTLP helper metric export (pins the 3.1.0 SDK line) |
+| `@opentelemetry/resources` | 3.1.0 | OTLP helper service-name / resource attributes |
 | Node.js | >=22.19.0 | Matches pi-telemetry |
 
 ## Non-goals
