@@ -75,7 +75,7 @@ aggregates per its views and readers.
 | Dependency | Version | Notes |
 |---|---|---|
 | `@earendil-works/pi-telemetry` | 1.5.0 | Adapter contract + conformance suite source |
-| `@opentelemetry/api` | 1.10.0 | Shared by the whole OTel set |
+| `@opentelemetry/api` | ^1.10.0 | Peer dependency: the host owns it, so the adapter and the host's SDK share one API instance |
 | `@opentelemetry/core` | 3.1.0 | W3C trace-context propagator |
 | `@opentelemetry/sdk-trace` | 3.1.0 | Span recording (3.x line; `sdk-trace-base@2.x` peers `api<1.10` and conflicts with `sdk-metrics@3.x`) + OTLP helper providers |
 | `@opentelemetry/sdk-metrics` | 3.1.0 | Instrument recording + OTLP helper providers |
@@ -83,6 +83,14 @@ aggregates per its views and readers.
 | `@opentelemetry/exporter-metrics-otlp-http` | 0.301.0 | OTLP helper metric export (pins the 3.1.0 SDK line) |
 | `@opentelemetry/resources` | 3.1.0 | OTLP helper service-name / resource attributes |
 | Node.js | >=22.19.0 | Matches pi-telemetry |
+
+`@opentelemetry/api` is a peer dependency: the host's OpenTelemetry SDK and
+this adapter must meet on the same API instance, which is how
+`createOpenTelemetryTelemetry()` picks up globally registered providers.
+npm and pnpm install peers automatically; Yarn PnP users may need to declare
+it themselves. (The API also survives duplication, since it shares state
+through a global symbol registry, so a single instance is a convention here
+rather than a correctness requirement.)
 
 ## Non-goals
 
