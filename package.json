@@ -1,6 +1,6 @@
 {
 	"name": "@brainrot.xyz/pi-telemetry-opentelemetry",
-	"version": "0.1.2",
+	"version": "0.2.0",
 	"description": "OpenTelemetry adapter for pi-telemetry",
 	"keywords": [
 		"opentelemetry",
